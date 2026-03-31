@@ -419,6 +419,7 @@ const DEFAULT_SETTINGS = {
   activeGroups: {kitchen:true, bathrooms:true, bedrooms:true, office:true, gameroom:false, den:false, basement:false, laundry:false, stairs:false},
   floorTypes: {bedrooms:"carpet", office:"hardwood", gameroom:"carpet", den:"carpet", basement:"concrete", laundry:"tile"},
   messiness: "normal",
+  moneyTier: "normal",
   currency: "$",
 };
 
@@ -431,10 +432,16 @@ const defaultData = () => ({balance:0,totalEarned:0,totalCompleted:0,streak:0,ma
 function scaledVal(baseVal, title) {
   const history = ST.data?.choreHistory || {};
   const lastDone = history[title];
-  if(!lastDone) return Math.round(baseVal * 1.5); // never done = 50% bonus to start
+
+  // Money tier multiplier
+  const tier = ST.settings?.moneyTier || 'normal';
+  const tierMult = tier === 'low' ? 0.1 : tier === 'high' ? 3 : 1;
+
+  const base = Math.round(baseVal * tierMult);
+  if(!lastDone) return Math.round(base * 1.5);
   const days = daysBetween(lastDone, todayStr());
   const multiplier = Math.min(3, 1 + (days * 0.1));
-  return Math.round(baseVal * multiplier);
+  return Math.round(base * multiplier);
 }
 
 const saveData     = d => { try{localStorage.setItem("cm4d",JSON.stringify(d));}catch(e){} };
@@ -708,6 +715,21 @@ function renderSettings(app) {
           </div>`).join("")}
       </div>
 
+      <div class="settings-section">
+        <div class="settings-section-title">How much is a chore worth?</div>
+        ${[
+          {v:"low",    l:"Pocket change",   sub:"Tasks worth ~$0.05–$0.30"},
+          {v:"normal", l:"Real money",       sub:"Tasks worth ~$0.50–$3.00"},
+          {v:"high",   l:"Treat yourself",  sub:"Tasks worth ~$1.50–$9.00"},
+        ].map(o=>`
+          <div class="settings-row" style="cursor:pointer" onclick="ST.editSettings.moneyTier='${o.v}';render()">
+            <div>
+              <div class="settings-row-label">${o.l}</div>
+              <div class="settings-row-sub">${o.sub}</div>
+            </div>
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${es.moneyTier===o.v?'#3fb950':'#30363d'};background:${es.moneyTier===o.v?'#3fb950':'transparent'};flex-shrink:0"></div>
+          </div>`).join("")}
+      </div>
       <div class="settings-section">
         <div class="settings-section-title">Currency</div>
         <div class="settings-row">
