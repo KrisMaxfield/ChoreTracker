@@ -433,15 +433,14 @@ function scaledVal(baseVal, title) {
   const history = ST.data?.choreHistory || {};
   const lastDone = history[title];
 
-  // Money tier multiplier
   const tier = ST.settings?.moneyTier || 'normal';
   const tierMult = tier === 'low' ? 0.1 : tier === 'high' ? 3 : 1;
 
   const base = Math.round(baseVal * tierMult);
-  if(!lastDone) return Math.round(base * 1.5);
+  if(!lastDone) return {val: base, days: 0};
   const days = daysBetween(lastDone, todayStr());
   const multiplier = Math.min(3, 1 + (days * 0.1));
-  return Math.round(base * multiplier);
+  return {val: Math.round(base * multiplier), days};
 }
 
 const saveData     = d => { try{localStorage.setItem("cm4d",JSON.stringify(d));}catch(e){} };
@@ -464,7 +463,8 @@ function pickUnique(pool, count, usedTitles=[]) {
     if(out.length >= count) break;
     const t = typeof fn === 'function' ? fn() : fn;
     if(!usedTitles.includes(t.title) && !hidden.includes(t.title)) {
-      out.push({...t, baseVal: t.val, val: scaledVal(t.val, t.title), id:`t${Date.now()}_${Math.random().toString(36).slice(2)}`});
+      const {val, days} = scaledVal(t.val, t.title);
+      out.push({...t, baseVal: t.val, val, daysSince: days, id:`t${Date.now()}_${Math.random().toString(36).slice(2)}`});
     }
   }
   return out;
@@ -1086,7 +1086,7 @@ function renderCard(t, completed, locked=false, isRoom=false, isBonus=false) {
             <div class="card-desc">${snoozed?`<span style="color:#e3b341">Snoozed until ${snoozed}</span>`:skipped?'<span style="color:#8b949e">Skipped — back tomorrow</span>':t.desc}</div>
           </div>
           ${done?'<span class="card-check">✓</span>':inactive?'':
-            `<div style="text-align:right;flex-shrink:0"><span class="card-val ${valClass}">${fmt(t.val)}</span>${t.val > t.baseVal ? `<div style="font-size:10px;color:#8b949e;margin-top:2px">base ${fmt(t.baseVal)}</div>` : ''}</div>`}
+            `<span class="card-val ${valClass}">${fmt(t.val)}</span>`}
         </button>
         ${!done?`<button class="card-menu-btn" onclick="toggleMenu('${t.id}',event)" style="background:#161b22;border:1px solid #21262d;border-left:none;border-radius:0 10px 10px 0;padding:0 12px">···</button>`:''}
       </div>
