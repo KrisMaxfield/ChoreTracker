@@ -797,6 +797,14 @@ function renderSettings(app) {
       <button class="save-settings-btn" onclick="saveSettingsAndBack()">Save settings</button>
       <p class="settings-note">Changes take effect after refreshing the page.</p>
       <p class="settings-note" style="margin-top:8px"><button style="background:transparent;border:none;color:#8b949e;cursor:pointer;font-size:12px;text-decoration:underline" onclick="ST.screen='home';render()">Cancel</button></p>
+
+      <div style="margin-top:32px;padding-top:20px;border-top:1px solid #21262d">
+        <div class="settings-section-title" style="margin-bottom:12px">Danger Zone</div>
+        <button onclick="resetAll()" style="width:100%;padding:13px;background:transparent;border:1px solid #f85149;border-radius:8px;color:#f85149;font-size:14px;cursor:pointer">
+          Reset everything
+        </button>
+        <p class="settings-note" style="margin-top:8px">Clears all data — balance, history, streak, settings, hidden tasks. Cannot be undone.</p>
+      </div>
     </div>`;
 }
 
@@ -1092,6 +1100,14 @@ function hideTask(id, title) {
   ST.activeMenu = null;
   saveToday({date:todayStr(),daily:ST.daily,completed:ST.completed});
   render();
+}
+
+function resetAll() {
+  if(!confirm("Reset everything? This clears your balance, streak, history, and all settings. Cannot be undone.")) return;
+  localStorage.removeItem("cm4d");
+  localStorage.removeItem("cm4t");
+  localStorage.removeItem("cm4s");
+  location.reload();
 }
 
 function unhideTask(title) {
