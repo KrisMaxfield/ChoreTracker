@@ -1,4 +1,4 @@
-# ChoreTracker
+# A Chore Tracker For People Who Hate Chore Trackers (CTFPWHWCT) 
 
 A chore tracker that doesn't pretend cleaning is fun. Tasks are randomized daily from a database with fun color and scavenger hunt challenges so it never feels like the same list (with a little bit of sarcasm/passive aggression because it helps to feel guilty for putting shit off). 
 
