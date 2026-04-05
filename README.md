@@ -21,7 +21,7 @@ Instead of points or stickers, you earn actual dollars (your own money) that you
 - Complete both groups in a day for a bonus payout
 - Streak counts from your first task of the day
 
-## Settings-
+## Settings
 
 - Hourly rate (drives all task values)
 - How messy your place is (scales task counts up or down)
