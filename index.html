@@ -166,6 +166,16 @@
   .snooze-opt:active { background: #21262d; }
   .card.snoozed { opacity: 0.35; }
   .card.snoozed .card-title { text-decoration: line-through; color: #8b949e; }
+
+  /* BONUS PICKER */
+  .bonus-picker { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 12px; margin-top: 8px; }
+  .bonus-picker input { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 8px; }
+  .bonus-picker-list { max-height: 220px; overflow-y: auto; }
+  .bonus-picker-item { width: 100%; padding: 9px 10px; background: transparent; border: none; border-bottom: 1px solid #21262d; color: #e6edf3; font-size: 13px; cursor: pointer; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+  .bonus-picker-item:last-child { border-bottom: none; }
+  .bonus-picker-item:active { background: #21262d; }
+  .bonus-picker-item .picker-val { color: #3fb950; font-size: 12px; flex-shrink: 0; margin-left: 8px; }
+  .bonus-picker-row { display: flex; gap: 8px; margin-top: 8px; }
   /* HISTORY */
   .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
   .history-table th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #8b949e; padding: 8px 6px; border-bottom: 1px solid #21262d; }
@@ -282,7 +292,8 @@ const GENERAL_POOL = [
 ];
 
 // Bathroom tasks
-const BATHROOM_POOL = [
+// Shared tasks for both full and half baths
+const BATH_SHARED = [
   r=>({title:`${r} — Toilet`,       desc:`Clean the ${r} toilet. Inside, outside, behind, under the rim.`,val:200,emoji:"🚽"}),
   r=>({title:`${r} — Sink`,         desc:`Scrub the ${r} sink until you can see yourself in the faucet.`,val:150,emoji:"🚿"}),
   r=>({title:`${r} — Mirror`,       desc:`Clean the ${r} mirror until there are zero toothpaste specks. Zero.`,val:75,emoji:"🪞"}),
@@ -290,14 +301,26 @@ const BATHROOM_POOL = [
   r=>({title:`${r} — Surfaces`,     desc:`Wipe down every surface in the ${r}. Counter, toilet tank, light fixture.`,val:100,emoji:"✨"}),
   r=>({title:`${r} — Cabinet`,      desc:`Go through the ${r} cabinet. Throw away anything expired, empty, or mysterious.`,val:100,emoji:"💊"}),
   r=>({title:`${r} — Restock`,      desc:`Make sure the ${r} has soap, toilet paper, and a real towel. Not a decorative one.`,val:100,emoji:"🧴"}),
-  r=>({title:`${r} — Drain`,        desc:`Clean the ${r} drain. Yes, that drain. Imagine how much hair is in there. Gross.`,val:100,emoji:"🌀"}),
-  r=>({title:`${r} — Shower Shelf`, desc:`Clear the ${r} shower shelf. Wipe it down. Put back only what you've used this month. Be honest.`,val:150,emoji:"🧴"}),
-  r=>({title:`${r} — Grout`,        desc:`Scrub one section of grout in the ${r}. Just one. See how it looks.`,val:150,emoji:"🧱"}),
-  r=>({title:`${r} — Towels`,       desc:`Swap out the towels in the ${r} for fresh ones. Old ones go in the laundry, not on the floor.`,val:75,emoji:"🏊"}),
   r=>({title:`${r} — Under Sink`,   desc:`Clean out the cabinet under the ${r} sink. Something in there has been there since 2019.`,val:150,emoji:"🔧"}),
   r=>({title:`${r} — Toilet Paper`, desc:`Check the ${r} toilet paper situation before someone runs out at the worst moment.`,val:50,emoji:"🧻"}),
   r=>({title:`${r} — Deep Wipe`,    desc:`Wipe the walls around the ${r} toilet. You don't want to know why, but you should.`,val:125,emoji:"🫧"}),
+  r=>({title:`${r} — Towels`,       desc:`Swap out the towels in the ${r} for fresh ones. Old ones go in the laundry, not on the floor.`,val:75,emoji:"🏊"}),
 ];
+
+// Full bath only — has shower/tub
+const FULL_BATH_EXTRA = [
+  r=>({title:`${r} — Shower/Tub`,   desc:`Scrub the shower or tub in the ${r}. The walls, the floor, the grout. All of it.`,val:200,emoji:"🛁"}),
+  r=>({title:`${r} — Shower Shelf`, desc:`Clear the ${r} shower shelf. Wipe it down. Put back only what you've used this month. Be honest.`,val:150,emoji:"🧴"}),
+  r=>({title:`${r} — Grout`,        desc:`Scrub one section of grout in the ${r}. Just one. See how it looks.`,val:150,emoji:"🧱"}),
+  r=>({title:`${r} — Drain`,        desc:`Clean the ${r} shower drain. Yes, that drain. Imagine how much hair is in there. Gross.`,val:100,emoji:"🌀"}),
+  r=>({title:`${r} — Curtain/Door`, desc:`Wipe down or wash the shower curtain or door in the ${r}. It's been a while.`,val:125,emoji:"🚿"}),
+];
+
+const FULL_BATH_POOL = r => [...BATH_SHARED.map(fn=>fn(r)), ...FULL_BATH_EXTRA.map(fn=>fn(r))];
+const HALF_BATH_POOL = r => BATH_SHARED.map(fn=>fn(r));
+
+// Legacy alias for backwards compat
+const BATHROOM_POOL = BATH_SHARED;
 
 // Bedroom tasks
 const BEDROOM_POOL = [
@@ -413,13 +436,15 @@ const ROOM_TASKS    = 3;
 const ROOM_MAX      = 5;
 
 const DEFAULT_SETTINGS = {
-  bathrooms: 3,
+  fullBaths: 1,
+  halfBaths: 1,
   bedrooms: 1,
   stairs: 1,
   activeGroups: {kitchen:true, bathrooms:true, bedrooms:true, office:true, gameroom:false, den:false, basement:false, laundry:false, stairs:false},
   floorTypes: {bedrooms:"carpet", office:"hardwood", gameroom:"carpet", den:"carpet", basement:"concrete", laundry:"tile"},
   messiness: "normal",
-  moneyTier: "normal",
+  hourlyWage: 25,
+  streakPenalty: 0,
   currency: "$",
 };
 
@@ -433,10 +458,23 @@ function scaledVal(baseVal, title) {
   const history = ST.data?.choreHistory || {};
   const lastDone = history[title];
 
-  const tier = ST.settings?.moneyTier || 'normal';
-  const tierMult = tier === 'low' ? 0.1 : tier === 'high' ? 3 : 1;
+  // Convert base val (effort units) to minutes, then to dollars at hourly wage
+  // effort scale: 25=1min, 50=2min, 75=3min, 100=5min, 150=8min, 200=12min, 250=18min, 300=25min
+  const effortToMins = v => {
+    if(v <= 25)  return 1;
+    if(v <= 50)  return 2;
+    if(v <= 75)  return 3;
+    if(v <= 100) return 5;
+    if(v <= 125) return 6;
+    if(v <= 150) return 8;
+    if(v <= 200) return 12;
+    if(v <= 250) return 18;
+    return 25;
+  };
+  const wage = ST.settings?.hourlyWage || 25;
+  const mins = effortToMins(baseVal);
+  const base = Math.round((wage / 60) * mins * 100); // in cents
 
-  const base = Math.round(baseVal * tierMult);
   if(!lastDone) return {val: base, days: 0};
   const days = daysBetween(lastDone, todayStr());
   const multiplier = Math.min(3, 1 + (days * 0.1));
@@ -496,7 +534,7 @@ function floorDesc(room, type) {
 }
 
 function buildDailyTasks(settings) {
-  const {bathrooms, bedrooms, stairs, activeGroups, floorTypes} = settings;
+  const {fullBaths, halfBaths, bedrooms, stairs, activeGroups, floorTypes} = settings;
   const hasLaundryRoom = activeGroups.laundry;
   const snoozedTitles = Object.entries(ST.data?.snoozed||{})
     .filter(([,d])=>d > todayStr()).map(([title])=>title);
@@ -516,9 +554,15 @@ function buildDailyTasks(settings) {
   }
   if(activeGroups.bathrooms) {
     const allBathTasks = [];
-    for(let i=1; i<=bathrooms; i++) {
-      const name = bathrooms===1 ? "Bathroom" : `Bathroom #${i}`;
-      buildRoomPool(BATHROOM_POOL, name).forEach(fn => allBathTasks.push(fn));
+    const fb = settings.fullBaths || 1;
+    const hb = settings.halfBaths || 0;
+    for(let i=1; i<=fb; i++) {
+      const name = (fb+hb)===1 ? "Full Bath" : `Full Bath #${i}`;
+      FULL_BATH_POOL(name).forEach(t => allBathTasks.push(()=>t));
+    }
+    for(let i=1; i<=hb; i++) {
+      const name = (fb+hb)===1 ? "Half Bath" : `Half Bath #${i}`;
+      HALF_BATH_POOL(name).forEach(t => allBathTasks.push(()=>t));
     }
     rooms["Bathrooms"] = pickUnique(allBathTasks, ROOM_TASKS).map(t=>({...t,group:"room",room:"Bathrooms"}));
   }
@@ -612,6 +656,7 @@ let ST = {
   completed: {},
   tab: "chores",
   spendEntry: '',
+  showBonusPicker: false,
   historySort: 'never',
   timer: {
     phase: 'work',   // work | break | long
@@ -716,19 +761,37 @@ function renderSettings(app) {
       </div>
 
       <div class="settings-section">
-        <div class="settings-section-title">How much is a chore worth?</div>
-        ${[
-          {v:"low",    l:"Pocket change",   sub:"Tasks worth ~$0.05–$0.30"},
-          {v:"normal", l:"Real money",       sub:"Tasks worth ~$0.50–$3.00"},
-          {v:"high",   l:"Treat yourself",  sub:"Tasks worth ~$1.50–$9.00"},
-        ].map(o=>`
-          <div class="settings-row" style="cursor:pointer" onclick="ST.editSettings.moneyTier='${o.v}';render()">
-            <div>
-              <div class="settings-row-label">${o.l}</div>
-              <div class="settings-row-sub">${o.sub}</div>
-            </div>
-            <div style="width:20px;height:20px;border-radius:50%;border:2px solid ${es.moneyTier===o.v?'#3fb950':'#30363d'};background:${es.moneyTier===o.v?'#3fb950':'transparent'};flex-shrink:0"></div>
-          </div>`).join("")}
+        <div class="settings-section-title">Hourly Rate</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">How much would you pay someone else to do this per hour?</div>
+            <div class="settings-row-sub">Tasks pay based on estimated time at this rate</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <span style="color:#8b949e;font-size:14px">${es.currency||'$'}</span>
+            <input type="number" min="1" max="999" step="1"
+              style="background:#161b22;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:7px 8px;font-size:15px;width:70px;text-align:center"
+              value="${es.hourlyWage||25}"
+              oninput="ST.editSettings.hourlyWage=parseFloat(this.value)||25" />
+            <span style="color:#8b949e;font-size:14px">/hr</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-section-title">Streak Break Penalty</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Penalty for missing a day</div>
+            <div class="settings-row-sub">Deducted from your balance automatically. Set to 0 to disable.</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <span style="color:#8b949e;font-size:14px">${es.currency||'$'}</span>
+            <input type="number" min="0" step="0.01"
+              style="background:#161b22;border:1px solid #30363d;border-radius:6px;color:#e6edf3;padding:7px 8px;font-size:15px;width:70px;text-align:center"
+              value="${((es.streakPenalty||0)/100).toFixed(2)}"
+              oninput="ST.editSettings.streakPenalty=Math.round((parseFloat(this.value)||0)*100)" />
+          </div>
+        </div>
       </div>
       <div class="settings-section">
         <div class="settings-section-title">Currency</div>
@@ -759,11 +822,25 @@ function renderSettings(app) {
       <div class="settings-section">
         <div class="settings-section-title">Bathrooms</div>
         <div class="settings-row">
-          <div><div class="settings-row-label">Number of bathrooms</div></div>
+          <div>
+            <div class="settings-row-label">Full baths</div>
+            <div class="settings-row-sub">Has a shower or tub</div>
+          </div>
           <div class="stepper">
-            <button class="stepper-btn" onclick="if(ST.editSettings.bathrooms>1){ST.editSettings.bathrooms--;render()}">−</button>
-            <span class="stepper-val">${es.bathrooms}</span>
-            <button class="stepper-btn" onclick="if(ST.editSettings.bathrooms<8){ST.editSettings.bathrooms++;render()}">+</button>
+            <button class="stepper-btn" onclick="if(ST.editSettings.fullBaths>0){ST.editSettings.fullBaths--;render()}">−</button>
+            <span class="stepper-val">${es.fullBaths||1}</span>
+            <button class="stepper-btn" onclick="if((ST.editSettings.fullBaths||1)<8){ST.editSettings.fullBaths=(ST.editSettings.fullBaths||1)+1;render()}">+</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Half baths</div>
+            <div class="settings-row-sub">Toilet and sink only</div>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn" onclick="if((ST.editSettings.halfBaths||0)>0){ST.editSettings.halfBaths--;render()}">−</button>
+            <span class="stepper-val">${es.halfBaths||0}</span>
+            <button class="stepper-btn" onclick="if((ST.editSettings.halfBaths||0)<8){ST.editSettings.halfBaths=(ST.editSettings.halfBaths||0)+1;render()}">+</button>
           </div>
         </div>
       </div>` : ''}
@@ -821,6 +898,18 @@ function renderSettings(app) {
       <p class="settings-note" style="margin-top:8px"><button style="background:transparent;border:none;color:#8b949e;cursor:pointer;font-size:12px;text-decoration:underline" onclick="ST.screen='home';render()">Cancel</button></p>
 
       <div style="margin-top:32px;padding-top:20px;border-top:1px solid #21262d">
+        <div class="settings-section-title" style="margin-bottom:12px">Backup & Restore</div>
+        <button onclick="generateBackup()" style="width:100%;padding:13px;background:transparent;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:14px;cursor:pointer;margin-bottom:10px">
+          Export backup code
+        </button>
+        <textarea id="backup-box" placeholder="Paste backup code here to restore..." style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e6edf3;font-size:12px;padding:10px;font-family:monospace;resize:vertical;min-height:70px;margin-bottom:8px"></textarea>
+        <button onclick="importBackup()" style="width:100%;padding:13px;background:transparent;border:1px solid #3fb950;border-radius:8px;color:#3fb950;font-size:14px;cursor:pointer">
+          Import backup code
+        </button>
+        <p class="settings-note" style="margin-top:8px">Save your export code somewhere safe — notes app, email, anywhere. Paste it back to restore.</p>
+      </div>
+
+      <div style="margin-top:20px;padding-top:20px;border-top:1px solid #21262d">
         <div class="settings-section-title" style="margin-bottom:12px">Danger Zone</div>
         <button onclick="resetAll()" style="width:100%;padding:13px;background:transparent;border:1px solid #f85149;border-radius:8px;color:#f85149;font-size:14px;cursor:pointer">
           Reset everything
@@ -885,7 +974,35 @@ function renderMain(app) {
       ${bonusTasks.map(t=>renderCard(t,completed,false,false,true)).join("")}
     </div>` : ''}
 
-    <button class="add-task-btn" onclick="addBonusTask()">＋ add a bonus task</button>
+    ${ST.showBonusPicker ? `
+      <div class="bonus-picker">
+        <input id="bonus-search" placeholder="Search tasks..." oninput="render()" autofocus>
+        <div class="bonus-picker-list">
+          ${(()=>{
+            const usedTitles = getAllTasks().map(t=>t.title);
+            const hidden = ST.data?.hiddenTasks||[];
+            const snoozed = Object.entries(ST.data?.snoozed||{}).filter(([,d])=>d>todayStr()).map(([t])=>t);
+            const query = document.getElementById('bonus-search')?.value?.toLowerCase()||'';
+            const all = getAllBonusPool();
+            return all
+              .filter(fn=>{ const t=fn(); return !usedTitles.includes(t.title)&&!hidden.includes(t.title)&&!snoozed.includes(t.title)&&!isSlotted(t.title); })
+              .map(fn=>fn())
+              .filter((t,i,arr)=>arr.findIndex(x=>x.title===t.title)===i) // dedupe
+              .filter(t=>!query||t.title.toLowerCase().includes(query))
+              .slice(0,40)
+              .map(t=>`<button class="bonus-picker-item" onclick="addBonusTaskPicked('${t.title.replace(/'/g,"\'")}')">
+                <span>${t.title}</span>
+                <span class="picker-val">${fmt(Math.round(scaledVal(t.val,t.title).val*1.25))}</span>
+              </button>`)
+              .join('') || '<div style="padding:12px;color:#8b949e;font-size:13px">No tasks found</div>';
+          })()}
+        </div>
+        <div class="bonus-picker-row">
+          <button class="add-task-btn" style="flex:1;margin:0" onclick="addBonusTask()">↺ Random</button>
+          <button class="add-task-btn" style="flex:1;margin:0;color:#6e7681" onclick="ST.showBonusPicker=false;render()">Cancel</button>
+        </div>
+      </div>
+    ` : `<button class="add-task-btn" onclick="ST.showBonusPicker=true;render()">＋ add a bonus task</button>`}
     ${allMaxed?`<div class="all-done-banner" style="margin-top:16px"><div class="icon">💰</div><p>Streak bonus earned!</p><small>Keep going — everything still pays. Balance: ${fmt(bal)}</small></div>`:''}
   `;
 
@@ -1124,6 +1241,118 @@ function hideTask(id, title) {
   render();
 }
 
+// ── BACKUP / RESTORE ──────────────────────────────────────────────────────────
+// Epoch: days since 2024-01-01
+const EPOCH = new Date('2024-01-01').getTime();
+const dateToN = d => d ? Math.round((new Date(d) - EPOCH) / 86400000).toString(36) : '';
+const nToDate = n => { const d = new Date(EPOCH + parseInt(n,36)*86400000); return d.toISOString().split('T')[0]; };
+
+function generateBackup() {
+  const d = ST.data;
+  if(!d) return;
+  // Header: CT3|balance|totalEarned|totalCompleted|streak|maxStreak|lastActiveDay
+  const header = [
+    'CT3',
+    (d.balance||0).toString(36),
+    (d.totalEarned||0).toString(36),
+    (d.totalCompleted||0).toString(36),
+    (d.streak||0).toString(36),
+    (d.maxStreak||0).toString(36),
+    dateToN(d.lastActiveDay),
+  ].join('|');
+
+  const titleCode = t => {
+    const consonants = t.toUpperCase().replace(/[AEIOU\s\W]/g,'');
+    return (consonants.slice(0,3) + t.replace(/\s/g,'').length).slice(0,6);
+  };
+  const history = Object.entries(d.choreHistory||{})
+    .filter(([,date]) => date)
+    .map(([title, date]) => `${titleCode(title)}:${dateToN(date)}`)
+    .join(',');
+
+  // Settings as base64
+  const settingsB64 = btoa(JSON.stringify(ST.settings||{}));
+
+  const code = `${header}~${history}~${settingsB64}`;
+  const box = document.getElementById('backup-box');
+  if(box) { box.value = code; box.select(); }
+  try { navigator.clipboard.writeText(code); showMsg('Copied to clipboard', true); }
+  catch(e) { showMsg('Code shown below — copy it manually', true); }
+}
+
+function importBackup() {
+  const box = document.getElementById('backup-box');
+  const code = box?.value?.trim();
+  if(!code || !code.startsWith('CT')) { showMsg('Invalid backup code', false); return; }
+
+  try {
+    const parts = code.split('~');
+    const [header, historyPart, settingsPart] = parts;
+    const [,bal,earned,completed,streak,maxStreak,lastDay] = header.split('|');
+
+    const d = loadData() || defaultData();
+    d.balance       = parseInt(bal, 36);
+    d.totalEarned   = parseInt(earned, 36);
+    d.totalCompleted= parseInt(completed, 36);
+    d.streak        = parseInt(streak, 36);
+    d.maxStreak     = parseInt(maxStreak, 36);
+    d.lastActiveDay = lastDay ? nToDate(lastDay) : null;
+
+    if(historyPart) {
+      const allTitles = getAllKnownTitles();
+      const titleCode = t => {
+        const consonants = t.toUpperCase().replace(/[AEIOU\s\W]/g,'');
+        return (consonants.slice(0,3) + t.replace(/\s/g,'').length).slice(0,6);
+      };
+      const codeMap = {};
+      allTitles.forEach(t => { codeMap[titleCode(t)] = t; });
+      historyPart.split(',').forEach(entry => {
+        const [code, dayN] = entry.split(':');
+        const title = codeMap[code];
+        if(title && dayN) d.choreHistory[title] = nToDate(dayN);
+      });
+    }
+
+    saveData(d);
+    ST.data = d;
+
+    // Restore settings if present
+    if(settingsPart) {
+      try {
+        const s = JSON.parse(atob(settingsPart));
+        saveSettings(s);
+        ST.settings = s;
+      } catch(e) {}
+    }
+
+    showMsg('Backup restored!', true);
+    render();
+  } catch(e) {
+    showMsg('Could not read backup code', false);
+  }
+}
+
+function getAllKnownTitles() {
+  // Pull every possible task title from all pools
+  const titles = new Set();
+  const settings = ST.settings || DEFAULT_SETTINGS;
+  const n = settings.bathrooms || 1;
+  const nb = settings.bedrooms || 1;
+  GENERAL_POOL.forEach(fn => titles.add(fn().title));
+  KITCHEN_POOL.forEach(fn => titles.add(fn().title));
+  OFFICE_POOL.forEach(fn => titles.add(fn().title));
+  GAMEROOM_POOL.forEach(fn => titles.add(fn().title));
+  DEN_POOL.forEach(fn => titles.add(fn().title));
+  BASEMENT_POOL.forEach(fn => titles.add(fn().title));
+  LAUNDRY_POOL.forEach(fn => titles.add(fn().title));
+  const fb2=settings.fullBaths||1, hb2=settings.halfBaths||0;
+  for(let i=1;i<=fb2;i++){ const nm=(fb2+hb2)===1?'Full Bath':`Full Bath #${i}`; FULL_BATH_POOL(nm).forEach(t=>titles.add(t.title)); }
+  for(let i=1;i<=hb2;i++){ const nm=(fb2+hb2)===1?'Half Bath':`Half Bath #${i}`; HALF_BATH_POOL(nm).forEach(t=>titles.add(t.title)); }
+  for(let i=1;i<=nb;i++) { const nm=nb===1?'Bedroom':`Bedroom #${i}`; BEDROOM_POOL.forEach(fn=>titles.add(fn(nm).title)); }
+  for(let i=1;i<=4;i++) { const nm=i===1?'Stairs':`Stairs #${i}`; STAIRS_POOL.forEach(fn=>titles.add(fn(nm).title)); }
+  return [...titles];
+}
+
 function resetAll() {
   if(!confirm("Reset everything? This clears your balance, streak, history, and all settings. Cannot be undone.")) return;
   localStorage.removeItem("cm4d");
@@ -1282,12 +1511,11 @@ function swapTask(id, key) {
     let pool;
     if(room==='Kitchen')    pool = KITCHEN_POOL.map(fn=>()=>fn());
     else if(room==='Bathrooms') {
-      const n = ST.settings.bathrooms;
+      const fb = ST.settings.fullBaths||1;
+      const hb = ST.settings.halfBaths||0;
       pool = [];
-      for(let i=1;i<=n;i++){
-        const nm = n===1?'Bathroom':`Bathroom #${i}`;
-        BATHROOM_POOL.forEach(fn=>pool.push(()=>fn(nm)));
-      }
+      for(let i=1;i<=fb;i++){ const nm=(fb+hb)===1?'Full Bath':`Full Bath #${i}`; FULL_BATH_POOL(nm).forEach(t=>pool.push(()=>t)); }
+      for(let i=1;i<=hb;i++){ const nm=(fb+hb)===1?'Half Bath':`Half Bath #${i}`; HALF_BATH_POOL(nm).forEach(t=>pool.push(()=>t)); }
     } else if(room==='Bedrooms') {
       const n = ST.settings.bedrooms;
       pool = [];
@@ -1304,10 +1532,8 @@ function swapTask(id, key) {
 
   } else if(key==='bonus') {
     const all = [...GENERAL_POOL,...KITCHEN_POOL,...OFFICE_POOL,
-      ...Array.from({length:ST.settings.bathrooms},(_,i)=>{
-        const nm=ST.settings.bathrooms===1?'Bathroom':`Bathroom #${i+1}`;
-        return BATHROOM_POOL.map(fn=>()=>fn(nm));
-      }).flat(),
+      ...Array.from({length:ST.settings.fullBaths||1},(_,i)=>{ const nm=(ST.settings.fullBaths||1)===1?'Full Bath':`Full Bath #${i+1}`; return FULL_BATH_POOL(nm).map(t=>()=>t); }).flat(),
+    ...Array.from({length:ST.settings.halfBaths||0},(_,i)=>{ const nm=(ST.settings.halfBaths||0)===1?'Half Bath':`Half Bath #${i+1}`; return HALF_BATH_POOL(nm).map(t=>()=>t); }).flat(),
       ...Array.from({length:ST.settings.bedrooms},(_,i)=>{
         const nm=ST.settings.bedrooms===1?'Bedroom':`Bedroom #${i+1}`;
         return BEDROOM_POOL.map(fn=>()=>fn(nm));
@@ -1337,24 +1563,62 @@ function swapTask(id, key) {
   render();
 }
 
-function addBonusTask() {
-  const usedTitles = getAllTasks().map(t=>t.title);
-  const all = [...GENERAL_POOL,...KITCHEN_POOL,...OFFICE_POOL,
-    ...Array.from({length:ST.settings.bathrooms},(_,i)=>{
-      const nm=ST.settings.bathrooms===1?'Bathroom':`Bathroom #${i+1}`;
-      return BATHROOM_POOL.map(fn=>()=>fn(nm));
-    }).flat(),
-    ...Array.from({length:ST.settings.bedrooms},(_,i)=>{
-      const nm=ST.settings.bedrooms===1?'Bedroom':`Bedroom #${i+1}`;
-      return BEDROOM_POOL.map(fn=>()=>fn(nm));
-    }).flat(),
+// Titles of tasks that contain randomized numbers or colors — excluded from bonus picker
+const SLOTTED_TITLES = new Set([
+  "Wrong Room","Color Hunt","Floor Pickup","Purge","Flat Surfaces","Windows",
+  "Duplicates","Tech Wipe","Plants","Mystery Cables","Expired Stuff","Book Donate",
+  "Kitchen Gadget Donate","Fridge Purge","Appliances","Cabinets","Cables","Shelves",
+  "Cable Management","Game Cull","Bookshelf","Trash Run","Void Box Audit","Donate Pile",
+  "Orphan Socks","Couch Cushions",
+]);
+// Room-prefixed slotted tasks (matched by suffix)
+const SLOTTED_SUFFIXES = [
+  "— Clothes","— Under Bed","— Socks","— Shelves","— Clothing Donate",
+];
+function isSlotted(title) {
+  if(SLOTTED_TITLES.has(title)) return true;
+  return SLOTTED_SUFFIXES.some(s => title.includes(s));
+}
+
+function getAllBonusPool() {
+  const s = ST.settings || DEFAULT_SETTINGS;
+  const nb = s.bathrooms||1, nbd = s.bedrooms||1, ns = s.stairs||1;
+  return [
+    ...GENERAL_POOL, ...KITCHEN_POOL, ...OFFICE_POOL,
+    ...GAMEROOM_POOL, ...DEN_POOL, ...BASEMENT_POOL, ...LAUNDRY_POOL,
+    ...Array.from({length:nb},(_,i)=>{ const nm=nb===1?'Bathroom':`Bathroom #${i+1}`; return BATHROOM_POOL.map(fn=>()=>fn(nm)); }).flat(),
+    ...Array.from({length:nbd},(_,i)=>{ const nm=nbd===1?'Bedroom':`Bedroom #${i+1}`; return BEDROOM_POOL.map(fn=>()=>fn(nm)); }).flat(),
+    ...Array.from({length:ns},(_,i)=>{ const nm=ns===1?'Stairs':`Stairs #${i+1}`; return STAIRS_POOL.map(fn=>()=>fn(nm)); }).flat(),
   ];
-  const candidates = all.filter(fn=>!usedTitles.includes(fn().title));
-  if(!candidates.length) return;
-  const base = pick(candidates)();
-  const task = {...base, val:base.val+Math.round(base.val*0.25), bonus:true, group:"bonus", id:`t${Date.now()}_b`};
+}
+
+function addBonusTaskPicked(title) {
+  const all = getAllBonusPool();
+  const usedTitles = getAllTasks().map(t=>t.title);
+  const fn = all.find(f=>f().title===title);
+  if(!fn) return;
+  const base = fn();
+  const {val} = scaledVal(base.val, base.title);
+  const task = {...base, baseVal:base.val, val:Math.round(val*1.25), bonus:true, group:"bonus", id:`t${Date.now()}_b`};
   if(!ST.daily.bonus) ST.daily.bonus=[];
   ST.daily.bonus.push(task);
+  ST.showBonusPicker = false;
+  saveToday({date:todayStr(),daily:ST.daily,completed:ST.completed});
+  render();
+}
+
+function addBonusTask() {
+  const usedTitles = getAllTasks().map(t=>t.title);
+  const hidden = ST.data?.hiddenTasks||[];
+  const all = getAllBonusPool();
+  const candidates = all.filter(fn=>{ const t=fn(); return !usedTitles.includes(t.title)&&!hidden.includes(t.title)&&!isSlotted(t.title); });
+  if(!candidates.length) return;
+  const base = pick(candidates)();
+  const {val} = scaledVal(base.val, base.title);
+  const task = {...base, baseVal:base.val, val:Math.round(val*1.25), bonus:true, group:"bonus", id:`t${Date.now()}_b`};
+  if(!ST.daily.bonus) ST.daily.bonus=[];
+  ST.daily.bonus.push(task);
+  ST.showBonusPicker = false;
   saveToday({date:todayStr(),daily:ST.daily,completed:ST.completed});
   render();
 }
@@ -1440,6 +1704,18 @@ function showMsg(text,ok) {
 (function(){
   ST.data     = loadData()     || defaultData();
   ST.settings = loadSettings() || {...DEFAULT_SETTINGS};
+
+  // Check for broken streak on load
+  const d = ST.data;
+  const last = d.lastActiveDay;
+  if(last && daysBetween(last, todayStr()) > 1 && d.streak > 0) {
+    const penalty = ST.settings?.streakPenalty || 0;
+    if(penalty > 0) {
+      d.balance = Math.max(0, (d.balance||0) - penalty);
+      d.streak = 0;
+      saveData(d);
+    }
+  }
 
   const t = loadToday();
   if(t && t.date===todayStr()) {
