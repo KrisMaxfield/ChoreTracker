@@ -1,4 +1,4 @@
-const CACHE = 'chore-tracker-v1';
+const CACHE = 'chore-tracker-v2';
 const ASSETS = [
   './index.html',
   './manifest.json'
@@ -20,15 +20,15 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Network first, fall back to cache
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
+    fetch(e.request)
+      .then(resp => {
         const clone = resp.clone();
         caches.open(CACHE).then(cache => cache.put(e.request, clone));
         return resp;
-      });
-    })
+      })
+      .catch(() => caches.match(e.request))
   );
 });
