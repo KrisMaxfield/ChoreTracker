@@ -167,6 +167,23 @@
   .card.snoozed { opacity: 0.35; }
   .card.snoozed .card-title { text-decoration: line-through; color: #8b949e; }
 
+
+  .quiz-card { background: var(--color-background-primary,#161b22); border: 1px solid #21262d; border-radius: 12px; padding: 20px; margin-bottom: 0; }
+  .quiz-q { font-size: 17px; font-weight: 500; color: #e6edf3; margin-bottom: 20px; line-height: 1.4; }
+  .quiz-btns { display: flex; gap: 10px; }
+  .quiz-btn { flex: 1; padding: 13px 8px; border-radius: 8px; border: 1px solid #30363d; background: #161b22; color: #e6edf3; font-size: 14px; cursor: pointer; font-weight: 500; }
+  .quiz-btn.keep { border-color: #3fb950; color: #3fb950; }
+  .quiz-btn.discard { border-color: #f85149; color: #f85149; }
+  .quiz-btn:active { opacity: 0.7; }
+  .quiz-result { text-align: center; padding: 32px 20px; }
+  .quiz-result .icon { font-size: 48px; margin-bottom: 12px; }
+  .quiz-result .verdict { font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+  .quiz-result .reason { font-size: 14px; color: #8b949e; margin-bottom: 24px; line-height: 1.5; }
+  .quiz-progress { display: flex; gap: 4px; margin-bottom: 20px; }
+  .quiz-dot { height: 3px; flex: 1; border-radius: 2px; background: #21262d; }
+  .quiz-dot.done { background: #3fb950; }
+  .quiz-dot.discard-dot { background: #f85149; }
+  .quiz-prompt { font-size: 13px; color: #8b949e; margin-bottom: 20px; text-align: center; }
   /* BONUS PICKER */
   .bonus-picker { background: #161b22; border: 1px solid #21262d; border-radius: 10px; padding: 12px; margin-top: 8px; }
   .bonus-picker input { width: 100%; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 8px 12px; color: #e6edf3; font-size: 13px; margin-bottom: 8px; }
@@ -657,6 +674,9 @@ let ST = {
   tab: "chores",
   spendEntry: '',
   showBonusPicker: false,
+  extrasSection: null, // null = menu, 'timer', 'declutter', 'impulse'
+  impulse: {qIdx:0, answers:[], done:false},
+  declutter: {qIdx:0, answers:[], done:false, verdict:null},
   historySort: 'never',
   timer: {
     phase: 'work',   // work | break | long
@@ -761,11 +781,11 @@ function renderSettings(app) {
       </div>
 
       <div class="settings-section">
-        <div class="settings-section-title">Hourly Rate</div>
+        <div class="settings-section-title">Chore Pay Rate</div>
         <div class="settings-row">
           <div>
-            <div class="settings-row-label">How much would you pay someone else to do this per hour?</div>
-            <div class="settings-row-sub">Tasks pay based on estimated time at this rate</div>
+            <div class="settings-row-label">What do you want to pay yourself per hour?</div>
+            <div class="settings-row-sub">Tip: 10–20% of your regular hourly pay is a good starting point. If you make $25/hr, try $2.50–$5.00.</div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
             <span style="color:#8b949e;font-size:14px">${es.currency||'$'}</span>
@@ -881,6 +901,12 @@ function renderSettings(app) {
             ${floorSelect(r.key, ft[r.key]||'carpet')}
           </div>`).join("")}
       </div>` : ''}
+
+      <div class="settings-section">
+        <div class="settings-section-title">Chore History</div>
+        <div class="settings-row-sub" style="margin-bottom:12px">How often each chore has been shown, completed, and skipped.</div>
+        ${historyHTML}
+      </div>
 
       ${(ST.data?.hiddenTasks||[]).length > 0 ? `
       <div class="settings-section">
@@ -1071,6 +1097,138 @@ function renderMain(app) {
         }).join('')}
       </tbody>
     </table>`;
+
+  // ── DECLUTTER QUIZ ──
+  const QUIZ = [
+    {q:"Have I used it in the last year?",           keep:"Yes",       discard:"No"},
+    {q:"Does it make my daily life easier or better?",keep:"Yes",      discard:"No"},
+    {q:"How much effort does it demand?",            keep:"Very little",discard:"Quite a bit"},
+    {q:"Could I replace it quickly and cheaply?",    keep:"No",        discard:"Yes"},
+    {q:"Would I choose to buy it today?",            keep:"Yes",       discard:"No"},
+    {q:"Is it actually doing the job it's meant to do?",keep:"Yes",    discard:"No"},
+    {q:"Does it reflect who I am now?",              keep:"Yes",       discard:"No — past me"},
+    {q:"Do I already own something that does the same thing?",keep:"No",discard:"Yes"},
+    {q:"Does it have a logical, accessible home in my space?",keep:"Yes",discard:"No"},
+    {q:"Would someone else get more value from it?", keep:"No",        discard:"Yes"},
+    {q:"Would I bother fixing it if it broke?",      keep:"Yes",       discard:"No"},
+    {q:"Would it make the moving truck?",            keep:"Yes",       discard:"No"},
+    {q:"Does it carry guilt, obligation, or 'someday' energy?",keep:"No",discard:"Yes"},
+    {q:"Am I keeping it for the memory, or do I actually use it?",keep:"I use it",discard:"Just the memory"},
+    {q:"Does it belong to a current hobby or a past one?",keep:"Current",discard:"Past"},
+    {q:"Have I thought about getting rid of it more than once?",keep:"No",discard:"Yes"},
+    {q:"Is it earning its space?",                   keep:"Yes",       discard:"No"},
+    {q:"What's the honest reason it's still here?",  keep:"I need or love it",discard:"Guilt, habit, or fear"},
+  ];
+
+  const dq = ST.declutter;
+  let declutterHTML = '';
+  if(dq.done) {
+    const keepCount = dq.answers.filter(a=>a==='keep').length;
+    const discardCount = dq.answers.filter(a=>a==='discard').length;
+    const verdict = discardCount > keepCount ? 'discard' : 'keep';
+    const strong = Math.abs(discardCount - keepCount);
+    const verdictText = verdict==='discard' ? 'Let it go' : 'Keep it';
+    const verdictSub = verdict==='discard'
+      ? (strong >= 6 ? "This one's been done for a while. You already know." : "More signs point to letting go than holding on.")
+      : (strong >= 6 ? "This one's genuinely earning its place." : "Leaning toward keeping it — but check back in six months.");
+    const icon = verdict==='discard' ? '🗑️' : '✅';
+    declutterHTML = `
+      <div class="quiz-result">
+        <div class="icon">${icon}</div>
+        <div class="verdict" style="color:${verdict==='discard'?'#f85149':'#3fb950'}">${verdictText}</div>
+        <div class="reason">${verdictSub}</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px;font-size:13px;color:#8b949e">
+          <span style="color:#3fb950">${keepCount} keep</span>
+          <span>·</span>
+          <span style="color:#f85149">${discardCount} let go</span>
+        </div>
+        <button class="quiz-btn" style="max-width:200px;margin:0 auto;display:block" onclick="ST.declutter={qIdx:0,answers:[],done:false,verdict:null};render()">Try another item</button>
+      </div>`;
+  } else {
+    const q = QUIZ[dq.qIdx];
+    const progressDots = QUIZ.map((_,i) => {
+      if(i >= dq.qIdx) return '<div class="quiz-dot"></div>';
+      const ans = dq.answers[i];
+      return `<div class="quiz-dot ${ans==='discard'?'discard-dot':'done'}"></div>`;
+    }).join('');
+    declutterHTML = `
+      <p class="quiz-prompt">Think of a specific item. Answer honestly.</p>
+      <div class="quiz-progress">${progressDots}</div>
+      <div class="quiz-card">
+        <div class="quiz-q">${q.q}</div>
+        <div class="quiz-btns">
+          <button class="quiz-btn keep" onclick="answerQuiz('keep')">${q.keep}</button>
+          <button class="quiz-btn discard" onclick="answerQuiz('discard')">${q.discard}</button>
+        </div>
+      </div>
+      ${dq.qIdx > 0 ? `<button onclick="ST.declutter.qIdx--;ST.declutter.answers.pop();render()" style="background:transparent;border:none;color:#8b949e;font-size:12px;cursor:pointer;margin-top:12px;display:block">← back</button>` : ''}`;
+  }
+
+
+  // ── IMPULSE QUIZ ──
+  const IMPULSE_Q = [
+    {q:"Have I wanted this for at least two weeks, unprompted?",         buy:"Yes",              nobuy:"No",            w:2},
+    {q:"Does it solve a real problem, or just an imagined one?",         buy:"Real problem",     nobuy:"Imagined one",  w:2},
+    {q:"Do I already own something that does the job?",                  buy:"No",               nobuy:"Yes",           w:2},
+    {q:"Can I borrow or rent it instead?",                               buy:"No",               nobuy:"Yes",           w:1},
+    {q:"Do I know exactly where it will live?",                          buy:"Yes",              nobuy:"No",            w:1},
+    {q:"Will I realistically still be using it in two years?",           buy:"Yes",              nobuy:"No",            w:2},
+    {q:"How many hours of work does it cost me?",                        buy:"A few",            nobuy:"Too many",      w:2},
+    {q:"Does the cost-per-use actually make sense?",                     buy:"Yes",              nobuy:"No",            w:2},
+    {q:"Does it fit my current lifestyle?",                              buy:"Yes",              nobuy:"No",            w:2},
+    {q:"Is this purchase moving me toward a financial goal or away?",    buy:"Toward",           nobuy:"Away",          w:3},
+    {q:"Am I in a calm, unbothered headspace right now?",                buy:"Yes",              nobuy:"No",            w:2},
+    {q:"Did something external push me toward this — a sale, an ad?",   buy:"No",               nobuy:"Yes",           w:2},
+    {q:"If there were no refunds, would I still buy it?",                buy:"Yes",              nobuy:"No",            w:3},
+  ];
+
+  const iq = ST.impulse;
+  let impulseHTML = '';
+  if(iq.done) {
+    const buyScore    = iq.answers.reduce((s,a,i)=>s+(a==='buy'?IMPULSE_Q[i].w:0),0);
+    const nobuyScore  = iq.answers.reduce((s,a,i)=>s+(a==='nobuy'?IMPULSE_Q[i].w:0),0);
+    const totalScore  = buyScore + nobuyScore;
+    const verdict     = nobuyScore > buyScore ? 'nobuy' : 'buy';
+    const strong      = Math.abs(buyScore - nobuyScore);
+    const buyCount    = iq.answers.filter(a=>a==='buy').length;
+    const nobuyCount  = iq.answers.filter(a=>a==='nobuy').length;
+    const verdictText = verdict==='nobuy' ? "Put it back" : "Okay, buy it";
+    const verdictSub  = verdict==='nobuy'
+      ? (strong >= 6 ? "This is not it. Close the tab." : "More signs point to skipping it than buying it.")
+      : (strong >= 6 ? "You've thought it through. Go ahead." : "Leaning toward yes — but sleep on it one more night.");
+    const icon = verdict==='nobuy' ? '🚫' : '✅';
+    impulseHTML = `
+      <div class="quiz-result">
+        <div class="icon">${icon}</div>
+        <div class="verdict" style="color:${verdict==='nobuy'?'#f85149':'#3fb950'}">${verdictText}</div>
+        <div class="reason">${verdictSub}</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-bottom:20px;font-size:13px;color:#8b949e">
+          <span style="color:#3fb950">${buyCount} buy</span>
+          <span>·</span>
+          <span style="color:#f85149">${nobuyCount} skip</span>
+        </div>
+        <button class="quiz-btn" style="max-width:200px;margin:0 auto;display:block" onclick="ST.impulse={qIdx:0,answers:[],done:false};render()">Try another item</button>
+      </div>`;
+  } else {
+    const q = IMPULSE_Q[iq.qIdx];
+    const progressDots = IMPULSE_Q.map((_,i) => {
+      if(i >= iq.qIdx) return '<div class="quiz-dot"></div>';
+      const ans = iq.answers[i];
+      return `<div class="quiz-dot ${ans==='nobuy'?'discard-dot':'done'}"></div>`;
+    }).join('');
+    impulseHTML = `
+      <p class="quiz-prompt">Think of a specific thing you want to buy.</p>
+      <div class="quiz-progress">${progressDots}</div>
+      <div class="quiz-card">
+        <div class="quiz-q">${q.q}</div>
+        <div class="quiz-btns">
+          <button class="quiz-btn keep" onclick="answerImpulse('buy')">${q.buy}</button>
+          <button class="quiz-btn discard" onclick="answerImpulse('nobuy')">${q.nobuy}</button>
+        </div>
+      </div>
+      ${iq.qIdx > 0 ? `<button onclick="ST.impulse.qIdx--;ST.impulse.answers.pop();render()" style="background:transparent;border:none;color:#8b949e;font-size:12px;cursor:pointer;margin-top:12px;display:block">← back</button>` : ''}`;
+  }
+
   // ── TIMER HTML ──
   const tm = ST.timer;
   const totalSecs = tm.phase==='work' ? 25*60 : tm.phase==='break' ? 5*60 : 20*60;
@@ -1118,12 +1276,51 @@ function renderMain(app) {
     <div class="tabs">
       <button class="tab ${tab==='chores'?'on':''}" onclick="setTab('chores')">Chores</button>
       <button class="tab ${tab==='spend'?'on':''}" onclick="setTab('spend')">Spend</button>
-      <button class="tab ${tab==='timer'?'on':''}" onclick="setTab('timer')">Timer</button>
-      <button class="tab ${tab==='history'?'on':''}" onclick="setTab('history')">History</button>
+      <button class="tab ${tab==='extras'?'on':''}" onclick="setTab('extras')">Other Tools</button>
       <button class="home-btn" onclick="ST.screen='home';render()">↺</button>
       <button class="home-btn" onclick="ST.editSettings=JSON.parse(JSON.stringify(ST.settings));ST.screen='settings';render()">⚙</button>
     </div>
-    <div class="body">${tab==='chores'?choreHTML:tab==='spend'?spendHTML:tab==='timer'?timerHTML:historyHTML}</div>
+    <div class="body">${tab==='chores'?choreHTML:tab==='spend'?spendHTML:
+      ST.extrasSection==='timer' ? `
+        <button onclick="ST.extrasSection=null;render()" style="background:transparent;border:none;color:#8b949e;font-size:13px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px">← Back</button>
+        ${timerHTML}
+      ` :
+      ST.extrasSection==='impulse' ? `
+        <button onclick="ST.extrasSection=null;render()" style="background:transparent;border:none;color:#8b949e;font-size:13px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px">← Back</button>
+        ${impulseHTML}
+      ` :
+      ST.extrasSection==='declutter' ? `
+        <button onclick="ST.extrasSection=null;render()" style="background:transparent;border:none;color:#8b949e;font-size:13px;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:4px">← Back</button>
+        ${declutterHTML}
+      ` : `
+        <div style="display:flex;flex-direction:column;gap:12px;padding-top:8px">
+          <button onclick="ST.extrasSection='timer';render()" style="display:flex;align-items:center;gap:16px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;cursor:pointer;text-align:left;color:#e6edf3;width:100%">
+            <span style="font-size:28px">⏱</span>
+            <div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:3px">Pomodoro Timer</div>
+              <div style="font-size:12px;color:#8b949e">25 min focus, 5 min break</div>
+            </div>
+            <span style="margin-left:auto;color:#8b949e;font-size:18px">›</span>
+          </button>
+          <button onclick="ST.extrasSection='declutter';render()" style="display:flex;align-items:center;gap:16px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;cursor:pointer;text-align:left;color:#e6edf3;width:100%">
+            <span style="font-size:28px">🗂</span>
+            <div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:3px">Declutter Quiz</div>
+              <div style="font-size:12px;color:#8b949e">Should you keep it or let it go?</div>
+            </div>
+            <span style="margin-left:auto;color:#8b949e;font-size:18px">›</span>
+          </button>
+          <button onclick="ST.extrasSection='impulse';render()" style="display:flex;align-items:center;gap:16px;background:#161b22;border:1px solid #21262d;border-radius:12px;padding:20px;cursor:pointer;text-align:left;color:#e6edf3;width:100%">
+            <span style="font-size:28px">💳</span>
+            <div>
+              <div style="font-size:15px;font-weight:600;margin-bottom:3px">Impulse Buy Quiz</div>
+              <div style="font-size:12px;color:#8b949e">Should you actually buy it?</div>
+            </div>
+            <span style="margin-left:auto;color:#8b949e;font-size:18px">›</span>
+          </button>
+        </div>
+      `
+    }</div>
   `;
 
   // Render floating menu outside card stack
@@ -1211,6 +1408,22 @@ function renderCard(t, completed, locked=false, isRoom=false, isBonus=false) {
 }
 
 // ── ACTIONS ───────────────────────────────────────────────────────────────────
+
+function answerImpulse(ans) {
+  const IMPULSE_LEN = 13;
+  ST.impulse.answers.push(ans);
+  ST.impulse.qIdx++;
+  if(ST.impulse.qIdx >= IMPULSE_LEN) ST.impulse.done = true;
+  render();
+}
+
+function answerQuiz(ans) {
+  const QUIZ_LEN = 18;
+  ST.declutter.answers.push(ans);
+  ST.declutter.qIdx++;
+  if(ST.declutter.qIdx >= QUIZ_LEN) ST.declutter.done = true;
+  render();
+}
 
 function toggleMenu(id, e) {
   e.stopPropagation();
@@ -1420,7 +1633,7 @@ function unsnoozeTask(id) {
   render();
 }
 
-function setTab(t) { ST.tab=t; render(); }
+function setTab(t) { ST.tab=t; if(t!=='extras') ST.extrasSection=null; render(); }
 
 function saveSettingsAndBack() {
   ST.settings = ST.editSettings;
