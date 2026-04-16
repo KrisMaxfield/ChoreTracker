@@ -16,11 +16,11 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0d1117; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #e6edf3; min-height: 100vh; display: flex; justify-content: center; }
-  #app { width: 100%; max-width: 440px; min-height: 100vh; }
+  #app { width: 100%; max-width: 440px; min-height: 100vh; position: relative; }
   #burst { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: #238636; color: #fff; font-size: 20px; font-weight: 700; padding: 10px 22px; border-radius: 30px; z-index: 999; pointer-events: none; display: none; white-space: nowrap; }
 
   /* HOME */
-  .home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px; text-align: center; }
+  .home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px 60px; text-align: center; overflow-y: auto; }
   .home-balance { font-size: 56px; font-weight: 700; color: #3fb950; letter-spacing: -2px; margin-bottom: 4px; }
   .home-label { font-size: 13px; color: #8b949e; margin-bottom: 32px; }
   .home h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
@@ -703,10 +703,57 @@ function render() {
   renderMain(app);
 }
 
+function buildHistoryHTML() {
+  const stats = ST.data?.choreStats || {};
+  const statEntries = Object.entries(stats);
+  const sortKey = ST.historySort || 'never';
+  const sorted = [...statEntries].sort((a,b) => {
+    const [,as] = a; const [,bs] = b;
+    if(sortKey==='never')     return (as.timesCompleted||0) - (bs.timesCompleted||0);
+    if(sortKey==='completed') return (bs.timesCompleted||0) - (as.timesCompleted||0);
+    if(sortKey==='shown')     return (bs.timesShown||0) - (as.timesShown||0);
+    if(sortKey==='swapped')   return (bs.timesSwapped||0) - (as.timesSwapped||0);
+    return 0;
+  });
+  if(statEntries.length === 0) return `<div class="history-zero">No history yet. Complete some chores first.</div>`;
+  return `
+    <div class="history-sort">
+      ${[['never','Least done'],['completed','Most done'],['shown','Most shown'],['swapped','Most skipped']].map(([k,l])=>
+        `<button class="sort-btn ${sortKey===k?'on':''}" onclick="ST.historySort='${k}';render()">${l}</button>`
+      ).join('')}
+    </div>
+    <table class="history-table">
+      <thead><tr>
+        <th>Chore</th>
+        <th class="num">Shown</th>
+        <th class="num">Done</th>
+        <th class="num">Skipped</th>
+        <th>Last done</th>
+      </tr></thead>
+      <tbody>
+        ${sorted.map(([title, s])=>{
+          const ratio = s.timesShown > 0 ? s.timesCompleted/s.timesShown : 0;
+          const doneClass = ratio >= 0.6 ? 'hi' : ratio <= 0.2 ? 'lo' : '';
+          const lastDone = s.lastCompleted ? (s.lastCompleted === todayStr() ? 'today' : s.lastCompleted) : '—';
+          return `<tr>
+            <td>${title}</td>
+            <td class="num">${s.timesShown||0}</td>
+            <td class="num ${doneClass}">${s.timesCompleted||0}</td>
+            <td class="num">${s.timesSwapped||0}</td>
+            <td style="font-size:11px;color:#8b949e">${lastDone}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
 function renderHome(app) {
   const {data, settings} = ST;
   app.innerHTML = `
     <div class="home">
+      <div style="width:100%;display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button onclick="openSettings()" style="background:transparent;border:1px solid #21262d;border-radius:8px;padding:8px 12px;color:#8b949e;font-size:16px;cursor:pointer">⚙</button>
+      </div>
       <div class="home-balance">${fmt(data?.balance||0)}</div>
       <div class="home-label">current balance</div>
       <h1>Ready to clean?</h1>
@@ -726,7 +773,6 @@ function renderHome(app) {
         </div>
       </div>
       <button class="start-btn" onclick="startDay()">Start today's chores →</button>
-      <button class="settings-link" onclick="ST.screen='settings';ST.editSettings=JSON.parse(JSON.stringify(ST.settings));render()">⚙ Settings</button>
     </div>`;
 }
 
@@ -737,7 +783,16 @@ function floorSelect(roomKey, current) {
   </select>`;
 }
 
+function openSettings() {
+  if(!ST.editSettings || !ST.editSettings.activeGroups) {
+    ST.editSettings = JSON.parse(JSON.stringify(ST.settings || DEFAULT_SETTINGS));
+  }
+  ST.screen = 'settings';
+  render();
+}
+
 function renderSettings(app) {
+  if(!ST.editSettings) ST.editSettings = JSON.parse(JSON.stringify(ST.settings || DEFAULT_SETTINGS));
   const es = ST.editSettings;
   const ag = es.activeGroups;
   const ft = es.floorTypes || {};
@@ -908,7 +963,7 @@ function renderSettings(app) {
       <div class="settings-section">
         <div class="settings-section-title">Chore History</div>
         <div class="settings-row-sub" style="margin-bottom:12px">How often each chore has been shown, completed, and skipped.</div>
-        ${historyHTML}
+        ${buildHistoryHTML()}
       </div>
 
       ${(ST.data?.hiddenTasks||[]).length > 0 ? `
@@ -1056,50 +1111,7 @@ function renderMain(app) {
 
 
   // ── HISTORY HTML ──
-  const stats = data?.choreStats || {};
-  const statEntries = Object.entries(stats);
-  const sortKey = ST.historySort || 'never';
-  const sorted = [...statEntries].sort((a,b) => {
-    const [,as] = a; const [,bs] = b;
-    if(sortKey==='never')     return (as.timesCompleted||0) - (bs.timesCompleted||0);
-    if(sortKey==='completed') return (bs.timesCompleted||0) - (as.timesCompleted||0);
-    if(sortKey==='shown')     return (bs.timesShown||0) - (as.timesShown||0);
-    if(sortKey==='swapped')   return (bs.timesSwapped||0) - (as.timesSwapped||0);
-    return 0;
-  });
-  const historyHTML = statEntries.length === 0
-    ? `<div class="history-zero">No history yet. Complete some chores first.</div>`
-    : `
-    <div class="history-sort">
-      ${[['never','Least done'],['completed','Most done'],['shown','Most shown'],['swapped','Most skipped']].map(([k,l])=>
-        `<button class="sort-btn ${sortKey===k?'on':''}" onclick="ST.historySort='${k}';render()">${l}</button>`
-      ).join('')}
-    </div>
-    <table class="history-table">
-      <thead><tr>
-        <th>Chore</th>
-        <th class="num">Shown</th>
-        <th class="num">Done</th>
-        <th class="num">Skipped</th>
-        <th>Last done</th>
-      </tr></thead>
-      <tbody>
-        ${sorted.map(([title, s])=>{
-          const ratio = s.timesShown > 0 ? s.timesCompleted/s.timesShown : 0;
-          const doneClass = ratio >= 0.6 ? 'hi' : ratio <= 0.2 ? 'lo' : '';
-          const lastDone = s.lastCompleted
-            ? (s.lastCompleted === todayStr() ? 'today' : s.lastCompleted)
-            : '—';
-          return `<tr>
-            <td>${title}</td>
-            <td class="num">${s.timesShown||0}</td>
-            <td class="num ${doneClass}">${s.timesCompleted||0}</td>
-            <td class="num">${s.timesSwapped||0}</td>
-            <td style="font-size:11px;color:#8b949e">${lastDone}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+  const historyHTML = buildHistoryHTML();
 
   // ── DECLUTTER QUIZ ──
   const QUIZ = [
@@ -1257,7 +1269,7 @@ function renderMain(app) {
       <button class="tab ${tab==='spend'?'on':''}" onclick="setTab('spend')">Spend</button>
       <button class="tab ${tab==='extras'?'on':''}" onclick="setTab('extras')">Other Tools</button>
       <button class="home-btn" onclick="ST.screen='home';render()">↺</button>
-      <button class="home-btn" onclick="ST.editSettings=JSON.parse(JSON.stringify(ST.settings));ST.screen='settings';render()">⚙</button>
+      <button class="home-btn" onclick="openSettings()" style="padding:8px 10px">⚙</button>
     </div>
     <div class="body">${tab==='chores'?choreHTML:tab==='spend'?spendHTML:
       ST.extrasSection==='timer' ? `
