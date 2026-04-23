@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1.0">
+<title>Screenshot</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+  }
+  .phone {
+    width: 390px;
+    background: #0d1117;
+    min-height: 844px;
+    position: relative;
+    color: #e6edf3;
+  }
+
+  /* WALLET BAR */
+  .wallet-bar {
+    padding: 52px 18px 14px;
+    border-bottom: 1px solid #21262d;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .wallet-amount { font-size: 34px; font-weight: 700; color: #3fb950; letter-spacing: -0.5px; }
+  .wallet-label { font-size: 11px; color: #8b949e; margin-top: 3px; }
+  .wallet-right { text-align: right; }
+  .streak-badge { font-size: 13px; color: #8b949e; }
+  .total-earned { font-size: 11px; color: #8b949e; margin-top: 3px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid #21262d;
+    align-items: center;
+  }
+  .tab {
+    flex: 1;
+    padding: 11px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #8b949e;
+    text-align: center;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.on { color: #e6edf3; border-bottom: 2px solid #3fb950; }
+  .icon-btn {
+    padding: 8px 10px;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    color: #8b949e;
+    font-size: 13px;
+    margin: 6px 8px;
+    background: transparent;
+  }
+
+  /* BODY */
+  .body { padding: 14px 14px 0; }
+
+  /* GROUP */
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .group-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #8b949e;
+  }
+  .group-count { font-size: 12px; color: #8b949e; }
+  .prog-bar { height: 3px; background: #21262d; border-radius: 2px; margin-bottom: 14px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 2px; background: #3fb950; }
+  .prog-fill.blue { background: #58a6ff; }
+
+  /* CARDS */
+  .card-wrap { margin-bottom: 8px; }
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: #e6edf3;
+  }
+  .card.done {
+    opacity: 0.45;
+    border-radius: 10px;
+  }
+  .card.with-swap { border-radius: 10px 10px 0 0; }
+  .card-emoji { font-size: 19px; flex-shrink: 0; }
+  .card-mid { flex: 1; }
+  .card-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; line-height: 1.2; }
+  .card-title.done { text-decoration: line-through; color: #8b949e; font-weight: 400; }
+  .card-desc { font-size: 12px; color: #8b949e; line-height: 1.4; }
+  .card-val { flex-shrink: 0; font-size: 14px; font-weight: 700; color: #3fb950; }
+  .card-val.blue { color: #58a6ff; }
+  .card-check { flex-shrink: 0; font-size: 16px; color: #3fb950; }
+  .menu-btn {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: #6e7681;
+    letter-spacing: 1px;
+    padding: 0 2px;
+  }
+  .swap-btn {
+    display: block;
+    width: 100%;
+    padding: 5px;
+    border: 1px dashed #21262d;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    color: #6e7681;
+    font-size: 11px;
+    text-align: center;
+    background: transparent;
+  }
+
+  /* ROOM SECTION */
+  .room-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #58a6ff;
+    letter-spacing: 0.5px;
+    margin: 14px 0 8px;
+  }
+
+  .group-block { margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="phone">
+
+  <!-- WALLET BAR -->
+  <div class="wallet-bar">
+    <div>
+      <div class="wallet-amount">$41.90</div>
+      <div class="wallet-label">balance</div>
+    </div>
+    <div class="wallet-right">
+      <div class="streak-badge">🔥 13 day streak</div>
+      <div class="total-earned">$142.98 earned total</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab on">Chores</div>
+    <div class="tab">Spend</div>
+    <div class="tab">Other Tools</div>
+    <div class="icon-btn">↺</div>
+    <div class="icon-btn">⚙</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- GENERAL GROUP -->
+    <div class="group-block">
+      <div class="group-header">
+        <span class="group-title">General</span>
+        <span class="group-count">1/5</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" style="width:20%"></div></div>
+
+      <!-- Color Hunt — active -->
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">🎯</span>
+          <div class="card-mid">
+            <div class="card-title">Color Hunt</div>
+            <div class="card-desc">Round up 9 teal objects from anywhere in the house. Put them away or throw them out.</div>
+          </div>
+          <span class="card-val">$1.25</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+
+      <!-- Plants — crossed out -->
+      <div class="card-wrap">
+        <div class="card done">
+          <span class="card-emoji">🌿</span>
+          <div class="card-mid">
+            <div class="card-title done">Plants</div>
+            <div class="card-desc">Check 4 plants. Water them. Remove anything that would need a necromancer to save.</div>
+          </div>
+          <span class="card-check">✓</span>
+        </div>
+      </div>
+
+      <!-- Smoke Alarms — active -->
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">🔋</span>
+          <div class="card-mid">
+            <div class="card-title">Smoke Alarms</div>
+            <div class="card-desc">Double check the batteries in your smoke and CO2 alarms. If you can't remember the last time you did this, that's your answer.</div>
+          </div>
+          <span class="card-val">$2.08</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+
+      <!-- Baseboards — active -->
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">👆</span>
+          <div class="card-mid">
+            <div class="card-title">Baseboards</div>
+            <div class="card-desc">Wipe down one wall's baseboards. Run a finger first if you're brave.</div>
+          </div>
+          <span class="card-val">$1.56</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+
+      <!-- Mug Roundup — active -->
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">☕</span>
+          <div class="card-mid">
+            <div class="card-title">Mug Roundup</div>
+            <div class="card-desc">Hunt down every mug that isn't in the kitchen. Escort them back.</div>
+          </div>
+          <span class="card-val">$0.83</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+    </div>
+
+    <!-- BY ROOM GROUP -->
+    <div class="group-block">
+      <div class="group-header">
+        <span class="group-title">By Room</span>
+        <span class="group-count">1/5</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill blue" style="width:20%"></div></div>
+
+      <!-- Kitchen -->
+      <div class="room-label">Kitchen</div>
+
+      <div class="card-wrap">
+        <div class="card done">
+          <span class="card-emoji">🔥</span>
+          <div class="card-mid">
+            <div class="card-title done">Stovetop</div>
+            <div class="card-desc">Clean the stovetop like someone who actually cooks and doesn't DoorDash every meal.</div>
+          </div>
+          <span class="card-check">✓</span>
+        </div>
+      </div>
+
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">🌀</span>
+          <div class="card-mid">
+            <div class="card-title">Drain/Disposal</div>
+            <div class="card-desc">Clean the kitchen drain and garbage disposal. You know what's in there.</div>
+          </div>
+          <span class="card-val blue">$3.13</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+
+      <div class="card-wrap">
+        <div class="card with-swap">
+          <span class="card-emoji">🗂️</span>
+          <div class="card-mid">
+            <div class="card-title">Junk Drawer</div>
+            <div class="card-desc">Empty the junk drawer completely. Only things with a known purpose come back.</div>
+          </div>
+          <span class="card-val blue">$5.21</span>
+          <span class="menu-btn">···</span>
+        </div>
+        <div class="swap-btn">↺ swap</div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
