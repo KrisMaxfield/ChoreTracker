@@ -1,41 +1,26 @@
-# A Chore Tracker For People Who Hate Chore Trackers (CTFPWHWCT) 
-
-A chore tracker that doesn't pretend cleaning is fun. Tasks are randomized daily from a database with fun color and scavenger hunt challenges so it never feels like the same list (with a little bit of sarcasm/passive aggression because it helps to feel guilty for putting shit off). 
+A chore tracker that doesn't pretend cleaning is fun. Tasks are randomized daily from a database with fun color and scavenger hunt challenges so it never feels like the same list (with a little bit of sarcasm/passive aggression because it helps to feel guilty for putting stuff off). 
 
 Instead of points or stickers, you earn actual dollars (your own money) that you were going to spend anyway. Complete a task? Add that amount to a splurge account. Treat yourself? subtract it.
 
 ## Core Mechanics
-- Earn money by doing chores — based on your hourly rate and estimated task time
+- Earn money by doing chores-- based on your hourly rate and estimated task time
 - The longer a task goes undone, the more it pays
 - Subtract from your balance when you actually spend money in real life
 
-## Tasks
-- Randomized daily across two groups — General and By Room (from a database, not genAI)
-- Oddly specific on purpose (counts, colors, and targets change every day)
-- Swap a task once per group per day
-- Skip (back tomorrow), Snooze (1 day / 1 week / 1 month), or Hide forever
-- Add bonus tasks anytime for extra pay
+## Other Tools:
+- **Pomodoro Timer:** 25 min focus, 5 min break
+- **Declutter Quiz:** 18 questions to figure out if you should keep something or get rid of it
+- **Impulse Buy Quiz:** 13 questions to decide if you actually need to buy something
 
-## Streaks & Bonuses
-- Hit 5 tasks in each group to keep your streak alive
-- Complete both groups in a day for a bonus payout
-- Streak counts from your first task of the day
-
-## Settings
-
-- Hourly rate (drives all task values)
-- How messy your place is (scales task counts up or down)
-- Toggle rooms on/off — Kitchen, Half & Full Bathrooms, Bedrooms, Home Office, Game Room, Den, Basement, Laundry Room, Stairs
-- Number of bathrooms, bedrooms, and staircases- Floor type per room (affects cleaning task wording)
+## Settings:
+- Set your "hourly rate" (drives all task values)
+- Adjust for how messy your home currently is
+- Set a streak break penalty
+- Configure rooms: full baths, half baths, bedrooms, kitchen, home office, game room, den, basement, laundry room, stairs
+- Floor type per room
 - Currency symbol
+- Backup and restore your data with a short code
 
-## History & Data
+**History:** (in Settings) Tracks every task: how many times it's been shown, completed, and skipped. Sortable by least done, most done, most shown, and most skipped.
 
-- History tab showing completion rate, times shown, and times skipped per task
-- Unhide tasks from settings
-- Compact backup/restore code for your gameplay data
-- Full reset option
-
-## Timer
-
-- Built-in Pomodoro timer (25/5)
+**GenAI Disclosure:** GenAI was used to fix minor bugs in the code (like missing parentheses) as I am relatively new to HTML/CSS/Javascript coding. All tasks are from internal manually coded database and no genAI imagery has been used -- only free "Creative Commons" images and Canva icons. 
