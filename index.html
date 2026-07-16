@@ -6,11 +6,11 @@
 <meta name="itch:width" content="480">
 <meta name="itch:height" content="854">
 <meta name="itch:dimensions" content="480x854">
-<title>Chore Tracker</title>
+<title>Chore Roulette</title>
 <meta name="theme-color" content="#0d1117">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chore Tracker">
+<meta name="apple-mobile-web-app-title" content="Chore Roulette">
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="manifest" href="manifest.json">
 <style>
@@ -678,6 +678,8 @@ let ST = {
   spendEntry: '',
   showBonusPicker: false,
   bonusSearch: '',
+  showCustomTask: false,
+  customTaskName: '',
   extrasSection: null, // null = menu, 'timer', 'declutter', 'impulse'
   impulse: {qIdx:0, answers:[], done:false},
   declutter: {qIdx:0, answers:[], done:false, verdict:null},
@@ -1089,6 +1091,19 @@ function renderMain(app) {
           <button class="add-task-btn" style="flex:1;margin:0" onclick="addBonusTask()">↺ Random</button>
           <button class="add-task-btn" style="flex:1;margin:0;color:#6e7681" onclick="closeBonusPicker()">Cancel</button>
         </div>
+        ${ST.showCustomTask ? `
+          <div style="margin-top:10px;border-top:1px solid #21262d;padding-top:10px">
+            <div style="font-size:11px;color:#8b949e;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Custom task</div>
+            <input id="custom-task-input" placeholder="Task name..." value="${ST.customTaskName||''}"
+              oninput="ST.customTaskName=this.value"
+              onkeydown="if(event.key==='Enter'&&ST.customTaskName.trim())addCustomTask()"
+              style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#e6edf3;font-size:13px;margin-bottom:8px">
+            <button class="add-task-btn" style="margin:0;background:#238636;border-color:#238636;color:#fff"
+              onclick="addCustomTask()" ${!`${ST.customTaskName||''}`.trim()?'disabled':''}>
+              Add task
+            </button>
+          </div>
+        ` : `<button onclick="ST.showCustomTask=true;render()" style="background:transparent;border:none;color:#8b949e;font-size:12px;cursor:pointer;padding:6px 0;width:100%;text-align:center">+ create custom task</button>`}
       </div>
     ` : `<button class="add-task-btn" onclick="ST.showBonusPicker=true;ST.bonusSearch='';render()">＋ add a bonus task</button>`}
     ${allMaxed?`<div class="all-done-banner" style="margin-top:16px"><div class="icon">💰</div><p>Streak bonus earned!</p><small>Keep going — everything still pays. Balance: ${fmt(bal)}</small></div>`:''}
@@ -1459,9 +1474,37 @@ function updateBonusList() {
     : '<div style="padding:12px;color:#8b949e;font-size:13px">No tasks found</div>';
 }
 
+function addCustomTask() {
+  const name = (ST.customTaskName||'').trim();
+  if(!name) return;
+  const wage = ST.settings?.hourlyWage || 25;
+  const val = Math.round((wage / 60) * 5 * 100); // 5 min default, in cents
+  const task = {
+    title: name,
+    desc: '',
+    emoji: '⭐',
+    val: Math.round(val * 1.25),
+    baseVal: val,
+    bonus: true,
+    group: 'bonus',
+    custom: true,
+    id: `t${Date.now()}_custom`
+  };
+  if(!ST.daily.bonus) ST.daily.bonus = [];
+  ST.daily.bonus.push(task);
+  ST.showBonusPicker = false;
+  ST.showCustomTask = false;
+  ST.customTaskName = '';
+  ST.bonusSearch = '';
+  saveToday({date:todayStr(),daily:ST.daily,completed:ST.completed});
+  render();
+}
+
 function closeBonusPicker() {
   ST.showBonusPicker = false;
   ST.bonusSearch = '';
+  ST.showCustomTask = false;
+  ST.customTaskName = '';
   render();
 }
 

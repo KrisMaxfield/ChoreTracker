@@ -1,4 +1,4 @@
-const CACHE = 'chore-tracker-v2';
+const CACHE = 'chore-roulette-v2';
 const ASSETS = [
   './index.html',
   './manifest.json'

@@ -1,6 +1,6 @@
 {
-  "name": "Chore Tracker",
-  "short_name": "Chores",
+  "name": "Chore Roulette",
+  "short_name": "Roulette",
   "description": "Daily chore tracker with rewards",
   "start_url": "./index.html",
   "display": "standalone",
