@@ -304,7 +304,7 @@ const GENERAL_POOL = [
   ()=>({title:"Couch Cushions",   desc:"Remove the couch cushions. Find what lives under there.",val:75,emoji:"🛋️"}),
   ()=>({title:"Expired Stuff",    desc:`Find ${sl("small")} expired things anywhere in the house — food, medicine, anything. Throw them out.`,val:75,emoji:"📅"}),
   ()=>({title:"Smoke Alarms",      desc:"Double check the batteries in your smoke and CO2 alarms. If you can't remember the last time you did this, that's your answer.",val:100,emoji:"🔋"}),
-  ()=>({title:"Book Roundup",      desc:"Make sure every book in the house is on a shelf.",val:50,emoji:"📚"}),
+  ()=>({title:"Book Roundup",      desc:`Make sure every book in the house is on a shelf. There are probably ${sl("medium")} that aren't.`,val:50,emoji:"📚"}),
   ()=>({title:"Book Donate",       desc:`Find ${sl("small")} books you're not going to read again. Bag them up and donate them.`,val:75,emoji:"📖"}),
   ()=>({title:"Kitchen Gadget Donate",desc:`Find ${sl("small")} kitchen gadgets you haven't touched in ${sl("months")} and donate them. You don't need the avocado slicer.`,val:75,emoji:"🍳"}),
   ()=>({title:"Medication Audit",  desc:"Go through your medications — prescription or OTC. Anything so expired it'd land you back at the doctor gets tossed.",val:100,emoji:"💊"}),
@@ -677,6 +677,7 @@ let ST = {
   tab: "chores",
   spendEntry: '',
   showBonusPicker: false,
+  bonusSearch: '',
   extrasSection: null, // null = menu, 'timer', 'declutter', 'impulse'
   impulse: {qIdx:0, answers:[], done:false},
   declutter: {qIdx:0, answers:[], done:false, verdict:null},
@@ -820,7 +821,10 @@ function renderSettings(app) {
 
   app.innerHTML = `
     <div class="settings-page">
-      <h2>⚙ Settings</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 style="margin:0">⚙ Settings</h2>
+        <button class="save-settings-btn" style="width:auto;padding:10px 20px;margin:0" onclick="saveSettingsAndBack()">Save</button>
+      </div>
 
       <div class="settings-section">
         <div class="settings-section-title">How messy is it?</div>
@@ -1060,13 +1064,13 @@ function renderMain(app) {
 
     ${ST.showBonusPicker ? `
       <div class="bonus-picker">
-        <input id="bonus-search" placeholder="Search tasks..." oninput="render()" autofocus>
+        <input id="bonus-search" placeholder="Search tasks..." value="${ST.bonusSearch||''}" oninput="ST.bonusSearch=this.value;updateBonusList()" autofocus>
         <div class="bonus-picker-list">
           ${(()=>{
             const usedTitles = getAllTasks().map(t=>t.title);
             const hidden = ST.data?.hiddenTasks||[];
             const snoozed = Object.entries(ST.data?.snoozed||{}).filter(([,d])=>d>todayStr()).map(([t])=>t);
-            const query = document.getElementById('bonus-search')?.value?.toLowerCase()||'';
+            const query = (ST.bonusSearch||'').toLowerCase();
             const all = getAllBonusPool();
             return all
               .filter(fn=>{ const t=fn(); return !usedTitles.includes(t.title)&&!hidden.includes(t.title)&&!snoozed.includes(t.title)&&!isSlotted(t.title); })
@@ -1083,28 +1087,28 @@ function renderMain(app) {
         </div>
         <div class="bonus-picker-row">
           <button class="add-task-btn" style="flex:1;margin:0" onclick="addBonusTask()">↺ Random</button>
-          <button class="add-task-btn" style="flex:1;margin:0;color:#6e7681" onclick="ST.showBonusPicker=false;render()">Cancel</button>
+          <button class="add-task-btn" style="flex:1;margin:0;color:#6e7681" onclick="closeBonusPicker()">Cancel</button>
         </div>
       </div>
-    ` : `<button class="add-task-btn" onclick="ST.showBonusPicker=true;render()">＋ add a bonus task</button>`}
+    ` : `<button class="add-task-btn" onclick="ST.showBonusPicker=true;ST.bonusSearch='';render()">＋ add a bonus task</button>`}
     ${allMaxed?`<div class="all-done-banner" style="margin-top:16px"><div class="icon">💰</div><p>Streak bonus earned!</p><small>Keep going — everything still pays. Balance: ${fmt(bal)}</small></div>`:''}
   `;
 
   const msgHTML    = ST.msg?`<div class="msg-bar" style="background:${ST.msg.ok?'#238636':'#da3633'}">${ST.msg.text}</div>`:'';
-  const spendEntry = ST.spendEntry||'';
-  const spendCents = spendEntry ? Math.round(parseFloat(spendEntry)*100) : 0;
+  const spendCents = parseInt(ST.spendEntry||'0', 10);
   const spendHTML  = `
     <div class="spend-balance-big">${fmt(bal)}</div>
     <div class="spend-balance-label">available to spend</div>
     ${msgHTML}
-    <div class="spend-input-display ${spendEntry?'has-val':''}">${spendEntry ? '-'+fmt(spendCents) : ''}&nbsp;</div>
+    <div class="spend-input-display ${spendCents>0?'has-val':''}">${spendCents>0 ? '-'+fmt(spendCents) : ''}&nbsp;</div>
     <div class="keypad">
-      ${['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>
+      ${['1','2','3','4','5','6','7','8','9','','0','⌫'].map(k=>
+        k==='' ? `<div></div>` :
         `<button class="key-btn ${k==='⌫'?'del':''}" onclick="keypad('${k}')">${k}</button>`
       ).join('')}
     </div>
-    <button class="deduct-btn" ${(!spendEntry||spendCents<=0||spendCents>bal)?'disabled':''} onclick="confirmSpend()">
-      Deduct ${spendEntry ? fmt(spendCents) : ''}
+    <button class="deduct-btn" ${(spendCents<=0||spendCents>bal)?'disabled':''} onclick="confirmSpend()">
+      Deduct ${spendCents>0 ? fmt(spendCents) : ''}
     </button>
   `;
 
@@ -1429,6 +1433,35 @@ function answerQuiz(ans) {
   ST.declutter.answers.push(ans);
   ST.declutter.qIdx++;
   if(ST.declutter.qIdx >= QUIZ_LEN) ST.declutter.done = true;
+  render();
+}
+
+function updateBonusList() {
+  // Re-render just the picker list without destroying the input focus
+  const query = (ST.bonusSearch||'').toLowerCase();
+  const usedTitles = getAllTasks().map(t=>t.title);
+  const hidden = ST.data?.hiddenTasks||[];
+  const snoozed = Object.entries(ST.data?.snoozed||{}).filter(([,d])=>d>todayStr()).map(([t])=>t);
+  const all = getAllBonusPool();
+  const items = all
+    .filter(fn=>{ const t=fn(); return !usedTitles.includes(t.title)&&!hidden.includes(t.title)&&!snoozed.includes(t.title); })
+    .map(fn=>fn())
+    .filter((t,i,arr)=>arr.findIndex(x=>x.title===t.title)===i)
+    .filter(t=>!query||t.title.toLowerCase().includes(query))
+    .slice(0,40);
+  const list = document.querySelector('.bonus-picker-list');
+  if(!list) return;
+  list.innerHTML = items.length
+    ? items.map(t=>`<button class="bonus-picker-item" onclick="addBonusTaskPicked('${t.title.replace(/'/g,"\\'")}')">
+        <span>${t.title}</span>
+        <span class="picker-val">${fmt(Math.round(scaledVal(t.val,t.title).val*1.25))}</span>
+      </button>`).join('')
+    : '<div style="padding:12px;color:#8b949e;font-size:13px">No tasks found</div>';
+}
+
+function closeBonusPicker() {
+  ST.showBonusPicker = false;
+  ST.bonusSearch = '';
   render();
 }
 
@@ -1844,25 +1877,25 @@ function addBonusTask() {
 }
 
 function keypad(k) {
-  let v = ST.spendEntry || '';
-  if(k === '⌫') { v = v.slice(0,-1); }
-  else if(k === '.') { if(!v.includes('.')) v += '.'; }
-  else {
-    // max 2 decimal places
-    const parts = v.split('.');
-    if(parts[1] !== undefined && parts[1].length >= 2) return;
-    v += k;
+  // Store as integer cents, build right-to-left like a payment terminal
+  let cents = parseInt(ST.spendEntry || '0', 10);
+  if(k === '⌫') {
+    cents = Math.floor(cents / 10);
+  } else if(k !== '.') {
+    const digit = parseInt(k, 10);
+    if(cents >= 99999999) return; // max ~$999,999
+    cents = cents * 10 + digit;
   }
-  ST.spendEntry = v;
+  ST.spendEntry = String(cents);
   render();
 }
 
 function confirmSpend() {
-  const cents = Math.round(parseFloat(ST.spendEntry)*100);
+  const cents = parseInt(ST.spendEntry||'0', 10);
   if(!cents || cents <= 0 || cents > (ST.data.balance||0)) return;
   ST.data = {...ST.data, balance: ST.data.balance - cents};
   saveData(ST.data);
-  ST.spendEntry = '';
+  ST.spendEntry = '0';
   showMsg(`Spent ${fmt(cents)}`, true);
   render();
 }
